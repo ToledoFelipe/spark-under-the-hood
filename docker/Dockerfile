@@ -5,7 +5,10 @@
 # Databricks Runtime costuma usar. Se preferir a linha mais nova (4.x),
 # é só trocar SPARK_VERSION abaixo.
 
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
+
+# Pinned to bookworm explicitly: on bullseye, openjdk-17-jdk-headless
+# isn't in the main apt repo (only backports), so apt-get install fails.
 
 ARG SPARK_VERSION=3.5.6
 
@@ -34,7 +37,6 @@ ENV SPARK_HOME=/usr/local/lib/python3.11/site-packages/pyspark
 ENV PATH="${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${PATH}"
 
 WORKDIR /app
-COPY test_spark.py /app/test_spark.py
 
 # Portas usadas pelo cluster standalone: 7077 (master RPC), 8080 (UI do master),
 # 8081 (UI do worker), 4040 (UI da aplicação/driver enquanto um job roda).

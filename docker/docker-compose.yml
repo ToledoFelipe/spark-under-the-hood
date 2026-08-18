@@ -41,10 +41,12 @@ services:
       - spark-master
       - spark-worker
     volumes:
-      - ./:/app
-    command: >
-      bash -c "sleep 5 && spark-submit --master spark://spark-master:7077
-      --deploy-mode client /app/test_spark.py"
+      - ../:/app   # repo root, not just docker/ — so scripts/, data/, notes/ are all visible
+    # Stays idle by design, not run-and-exit — so `docker compose exec spark-submit ...`
+    # and VS Code's "Attach to Running Container" always have something to attach to.
+    # To actually run a job: docker compose exec spark-submit spark-submit --master
+    # spark://spark-master:7077 /app/scripts/test_spark.py
+    command: tail -f /dev/null
     ports:
       - "4040:4040"   # UI da aplicação (só existe enquanto o job está rodando)
     networks:
