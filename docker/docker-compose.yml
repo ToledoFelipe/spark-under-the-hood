@@ -22,14 +22,24 @@ services:
     build: .
     depends_on:
       - spark-master
+    volumes:
+      - ../:/app   # executors run here — need the same /app/data as the driver to read local files
+    # Cores/memory are overridable via env vars (see .env / SETUP.md "Performance testing")
+    # so a perf test can go higher without changing the everyday dev default.
     command: >
       bash -c "$$SPARK_HOME/bin/spark-class org.apache.spark.deploy.worker.Worker
-      spark://spark-master:7077 --webui-port 8081 --cores 2 --memory 2g"
+      spark://spark-master:7077 --webui-port 8081
+      --cores ${SPARK_WORKER_CORES:-2} --memory ${SPARK_WORKER_MEMORY:-2g}"
+    deploy:
+      resources:
+        limits:
+          cpus: "${SPARK_WORKER_CORES:-2}"
+          memory: ${SPARK_WORKER_MEMORY:-2g}
     ports:
       - "8081-8090:8081"   # range pra caber múltiplos workers se você escalar
     environment:
-      - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES:-2}
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY:-2g}
     networks:
       - spark-net
     # Pra ter mais de um worker (simular mais paralelismo):
@@ -42,6 +52,11 @@ services:
       - spark-worker
     volumes:
       - ../:/app   # repo root, not just docker/ — so scripts/, data/, notes/ are all visible
+    deploy:
+      resources:
+        limits:
+          cpus: "${SPARK_DRIVER_CORES:-2}"
+          memory: ${SPARK_DRIVER_MEMORY:-2g}
     # Stays idle by design, not run-and-exit — so `docker compose exec spark-submit ...`
     # and VS Code's "Attach to Running Container" always have something to attach to.
     # To actually run a job: docker compose exec spark-submit spark-submit --master
